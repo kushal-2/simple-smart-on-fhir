@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Index</title>
+    <script src='fhir-client.min.js'></script>
+    <script>
+	    function maddreyScore(pt, tb, pt_control=12) {
+		    return 4.6 * (pt - pt_control) + tb;
+	    }
+	    FHIR.oauth2.ready(function(smart){
+			smart.patient.api.fetchAll({
+				type: 'Observation',
+				query: { code: { $or: ['5902-2'/*PT*/, '1975-2'/*TBili*/] } }
+			}).then(function(results){
+				console.log(results);
+				var pt = results.filter(r => r.code.coding.some(c => c.code == '5902-2'/*PT*/)).reduce((a,v) => !a||v.effectiveDateTime>a.effectiveDateTime?v:a, null);
+				var tb = results.filter(r => r.code.coding.some(c => c.code == '1975-2'/*TBili*/)).reduce((a,v) => !a||v.effectiveDateTime>a.effectiveDateTime?v:a, null);
+				if(tb && pt) {
+					document.getElementById('pt').value = pt.valueQuantity.value;
+					document.getElementById('pt_dts').innerHTML = pt.effectiveDateTime;
+					document.getElementById('tb').value = tb.valueQuantity.value;
+					document.getElementById('tb_dts').innerHTML = tb.effectiveDateTime;
+					var score = maddreyScore(pt.valueQuantity.value, tb.valueQuantity.value);
+				    document.getElementById('score').value = isNaN(score) ? '' : score.toFixed(1);
+				    document.getElementById('score_txt').innerHTML = isNaN(score) ? '' : score > 32 ? 'Poor Prognosis' : 'Good Prognosis';
+				}
+			}, function(error){
+			    console.log(error);
+			    document.getElementById('error').innerHTML = error.error.responseJSON.message || error.error.responseJSON.text.div;
+			});
+		}, function(error) {
+		    console.log(error);
+		    document.getElementById('error').innerHTML = error;
+		});
+    </script>
+    <style>
+	    body{font-family:-apple-system,sans-serif;font-size:large;}
+	    input{font-size:large;}
+	    span{color:#888;}
+	    input{font-weight:bold;}
+    </style>
+  </head>
+  <body>
+    <h3>Maddrey's Discriminant Function for Alcoholic Hepatitis</h3>
+    <label>PT <input id="pt" readonly="readonly"></label><span id="pt_dts"></span><br />
+    <label>Total Bilirubin <input id="tb" readonly="readonly"></label><span id="tb_dts"></span><br />
+    <label>Score <input id="score" readonly="readonly"></label><span id="score_txt"></span>
+    <div id="error" />
+  </body>
+</html>
