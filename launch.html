@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Launch</title>
+  </head>
+  <body>
+    <script src='fhir-client.min.js'></script>
+    <script>
+      FHIR.oauth2.authorize({
+        'client_id': '0646e48d-8172-4cfc-aa34-85349bbb1ad0',
+        'scope': 'patient/*.read launch'
+      });
+    </script>
+  </body>
+</html>
